@@ -2,7 +2,7 @@
 #
 # EOF token被用来表示再没有用来语法分析的输入了
 
-INTEGER, PLUS, EOF = "INTEGER", "PLUS", "EOF"
+INTEGER, PLUS, MINUS, EOF = "INTEGER", "PLUS", "MINUS", "EOF"
 
 
 class Token(object):
@@ -49,7 +49,7 @@ class Interpreter(object):
         text = self.text
 
         # 是否self.pos超出了self.text的最大索引了？
-        # 如果是的话，返回EOF(因为没有需要在转换成token的输入了)
+        # 如果是的话，返回EOF(因为没有需要再转换成token的输入了)
         if self.pos > len(text) - 1:
             return Token(EOF, None)
 
@@ -59,15 +59,27 @@ class Interpreter(object):
 
         # 如果字符是一个数字，就将其转换成integer，并创建一个INTEGER token
         # 并递增self.pos，后返回INTEGER token
+        # 这里的数字可以>9
+
         if current_char.isdigit():
-            token = Token(INTEGER, int(current_char))
-            self.pos += 1
-            return token
+            val = 0
+            while self.pos < len(text) and text[self.pos].isdigit():
+                current_char = text[self.pos]
+                val = (val * 10 + int(current_char))
+                self.pos += 1
+            return Token(INTEGER, val)
 
         if current_char == '+':
             token = Token(PLUS, current_char)
             self.pos += 1
             return token
+
+        # 如果是空格则跳过
+        # 并且返回空格后面的token
+        if current_char.isspace():
+            self.skip_space()
+            return self.get_next_token()
+
 
         self.error()
 
@@ -104,6 +116,10 @@ class Interpreter(object):
         # 所以只需要返回加法运算的结果就OK了
         result = left.value + right.value
         return result
+
+    def skip_space(self):
+        while self.pos < len(self.text) and self.text[self.pos].isspace():
+            self.pos += 1
 
 
 def main():
