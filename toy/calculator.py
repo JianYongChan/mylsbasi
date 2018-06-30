@@ -37,51 +37,55 @@ class Interpreter(object):
         self.pos = 0
         # 当前的token实例
         self.current_token = None
+        self.current_char = self.text[self.pos]
 
     def error(self):
         return Exception("Error parsing input")
+
+    def advance(self):
+        self.pos += 1
+        if self.pos > len(self.text) - 1:
+            self.current_char = None
+        else:
+            self.current_char = self.text[self.pos]
+
+    def skip_whitespace(self):
+        # 注意None不能用!=判断
+        while self.current_char is not None and self.current_char.isspace():
+            self.advance()
+
+    def integer(self):
+        result = ''
+        while self.current_char is not None and self.current_char.isdigit():
+            result += self.current_char
+            self.advance()
+        return int(result)
 
     def get_next_token(self):
         """ 语义分析器(tokenizer)
 
         这个方法被用来将一条语句分解成tokens(一次一个token)
         """
-        text = self.text
+        while self.current_char is not None:
 
-        # 是否self.pos超出了self.text的最大索引了？
-        # 如果是的话，返回EOF(因为没有需要再转换成token的输入了)
-        if self.pos > len(text) - 1:
-            return Token(EOF, None)
+            if self.current_char.isspace():
+                self.skip_whitespace()
+                continue
 
-        # 取self.text中self.pos位置上的字符
-        # 并由这单个字符决定创建什么token
-        current_char = text[self.pos]
+            if self.current_char.isdigit():
+                return Token(INTEGER, self.integer())
 
-        # 如果字符是一个数字，就将其转换成integer，并创建一个INTEGER token
-        # 并递增self.pos，后返回INTEGER token
-        # 这里的数字可以>9
+            if self.current_char == '+':
+                self.advance()
+                return Token(PLUS, '+')
 
-        if current_char.isdigit():
-            val = 0
-            while self.pos < len(text) and text[self.pos].isdigit():
-                current_char = text[self.pos]
-                val = (val * 10 + int(current_char))
-                self.pos += 1
-            return Token(INTEGER, val)
+            if self.current_char == '-':
+                self.advance()
+                return Token(MINUS, '-')
 
-        if current_char == '+':
-            token = Token(PLUS, current_char)
-            self.pos += 1
-            return token
+            self.error()
 
-        # 如果是空格则跳过
-        # 并且返回空格后面的token
-        if current_char.isspace():
-            self.skip_space()
-            return self.get_next_token()
-
-
-        self.error()
+        return Token(EOF, None)
 
     def eat(self, token_type):
         # 将当前的token和传入的token类型相比较
@@ -94,7 +98,7 @@ class Interpreter(object):
             self.error()
 
     def expr(self):
-        """expr -> INTEGER PLUS INTEGER"""
+        """expr -> INTEGER PLUS/MINUS INTEGER"""
         # 将当前的token设置为从输入得到的第一个token
         self.current_token = self.get_next_token()
 
@@ -104,7 +108,10 @@ class Interpreter(object):
 
         # 期望当前的token是一个'+'
         op = self.current_token
-        self.eat(PLUS)
+        if op.value == '+':
+            self.eat(PLUS)
+        else:
+            self.eat(MINUS)
 
         # 期望当前的token是一个单字符数字
         right = self.current_token
@@ -114,12 +121,11 @@ class Interpreter(object):
 
         # 此时 `INTEGER PLUS INTEGER`序列已经被成功解析
         # 所以只需要返回加法运算的结果就OK了
-        result = left.value + right.value
+        if op.type == PLUS:
+            result = left.value + right.value
+        else:
+            result = left.value - right.value
         return result
-
-    def skip_space(self):
-        while self.pos < len(self.text) and self.text[self.pos].isspace():
-            self.pos += 1
 
 
 def main():
