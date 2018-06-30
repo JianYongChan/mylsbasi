@@ -2,8 +2,8 @@
 #
 # EOF token被用来表示再没有用来语法分析的输入了
 
-INTEGER, PLUS, MINUS, EOF = "INTEGER", "PLUS", "MINUS", "EOF"
-
+INTEGER, EOF = "INTEGER", "EOF"
+PLUS, MINUS, MULTI, DIVID = "PLUS", "MINUS", "MULTI", "DIVID"
 
 class Token(object):
     def __init__(self, type, value):
@@ -83,6 +83,14 @@ class Interpreter(object):
                 self.advance()
                 return Token(MINUS, '-')
 
+            if self.current_char == '*':
+                self.advance()
+                return Token(MULTI, '*')
+
+            if self.current_char == '/':
+                self.advance()
+                return Token(DIVID, '/')
+
             self.error()
 
         return Token(EOF, None)
@@ -98,6 +106,10 @@ class Interpreter(object):
             self.error()
 
     def expr(self):
+        """解析一条表达式
+        目前支持任意数量的加减法
+        """
+
         """expr -> INTEGER PLUS/MINUS INTEGER"""
         # 将当前的token设置为从输入得到的第一个token
         self.current_token = self.get_next_token()
@@ -106,12 +118,16 @@ class Interpreter(object):
         left = self.current_token
         self.eat(INTEGER)
 
-        # 期望当前的token是一个'+'
+        # 期望当前的token是一个+ - * /
         op = self.current_token
         if op.value == '+':
             self.eat(PLUS)
-        else:
+        elif op.value == '-':
             self.eat(MINUS)
+        elif op.value == '*':
+            self.eat(MULTI)
+        else:
+            self.eat(DIVID)
 
         # 期望当前的token是一个单字符数字
         right = self.current_token
@@ -123,8 +139,18 @@ class Interpreter(object):
         # 所以只需要返回加法运算的结果就OK了
         if op.type == PLUS:
             result = left.value + right.value
-        else:
+        elif op.type == MINUS:
             result = left.value - right.value
+        elif op.type == MULTI:
+            result = left.value * right.value
+        else:
+            # 是否要处理除0异常，我不确定
+            try:
+                result = left.value / right.value
+            except ZeroDivisionError:
+                print("0 cannot be divisor")
+                result = None
+
         return result
 
 
@@ -140,6 +166,6 @@ def main():
         result = interpreter.expr()
         print(result)
 
-        
+
 if __name__ == "__main__":
     main()
