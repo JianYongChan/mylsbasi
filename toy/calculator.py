@@ -117,39 +117,39 @@ class Interpreter(object):
         # 期望当前的token是一个单字符的数字
         left = self.current_token
         self.eat(INTEGER)
+        result = left.value
 
         # 期望当前的token是一个+ - * /
-        op = self.current_token
-        if op.value == '+':
-            self.eat(PLUS)
-        elif op.value == '-':
-            self.eat(MINUS)
-        elif op.value == '*':
-            self.eat(MULTI)
-        else:
-            self.eat(DIVID)
+        while self.current_char is not None:
+            op = self.current_token
+            if op.value == '+':
+                self.eat(PLUS)
+            elif op.value == '-':
+                self.eat(MINUS)
+            elif op.value == '*':
+                self.eat(MULTI)
+            else:
+                self.eat(DIVID)
 
-        # 期望当前的token是一个单字符数字
-        right = self.current_token
-        self.eat(INTEGER)
+            # 期望当前的token是一个单数字
+            right = self.current_token
+            self.eat(INTEGER)
 
-        # 经过了上面的解析之后，current_token被设置为EOF
-
-        # 此时 `INTEGER PLUS INTEGER`序列已经被成功解析
-        # 所以只需要返回加法运算的结果就OK了
-        if op.type == PLUS:
-            result = left.value + right.value
-        elif op.type == MINUS:
-            result = left.value - right.value
-        elif op.type == MULTI:
-            result = left.value * right.value
-        else:
-            # 是否要处理除0异常，我不确定
-            try:
-                result = left.value / right.value
-            except ZeroDivisionError:
-                print("0 cannot be divisor")
-                result = None
+            # 此时 `INTEGER PLUS INTEGER`序列已经被成功解析
+            # 所以只需要返回加法运算的结果就OK了
+            if op.type == PLUS:
+                result = result + right.value
+            elif op.type == MINUS:
+                result = result - right.value
+            elif op.type == MULTI:
+                result = result * right.value
+            else:
+                # 是否要处理除0异常，我不确定
+                try:
+                    result = result / right.value
+                except ZeroDivisionError:
+                    print("0 cannot be divisor")
+                    result = None
 
         return result
 
