@@ -10,13 +10,10 @@ int Interpreter::Expr() {
     Token left = current_token_;
     Eat(kINTEGER);
     int result = std::stoi(left.value_);
-    std::cout << "now result = " << result << std::endl;
 
     while (current_char_ != '\0') {
         Token op = current_token_;
-        std::cout << "op: " << op.value_ << std::endl;
         if (op.value_ == "+") {
-            std::cout << "KPLUS" << std::endl;
             Eat(kPLUS);
         } else if (op.value_ == "-") {
             Eat(kMINUS);
@@ -32,8 +29,6 @@ int Interpreter::Expr() {
 
         if (op.type_ == kPLUS) {
             result += right_val;
-            std::cout << "kplus" << std::endl;
-            std::cout << "result: " << result << std::endl;
         } else if (op.type_ == kMINUS) {
             result -= right_val;
         } else if (op.type_ == kMULTI) {
@@ -116,7 +111,7 @@ Token Interpreter::GetNextToken() {
 
         if (current_char_ == '/') {
             Advance();
-            return Token(kMULTI, "/");
+            return Token(kDIVID, "/");
         }
 
         Error();
