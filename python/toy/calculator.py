@@ -1,7 +1,3 @@
-# token类型
-#
-# EOF token被用来表示再没有用来语法分析的输入了
-
 INTEGER, EOF = "INTEGER", "EOF"
 PLUS, MINUS, MULTI, DIVID = "PLUS", "MINUS", "MULTI", "DIVID"
 
@@ -29,20 +25,19 @@ class Token(object):
         return self.__str__()
 
 
-class Interpreter(object):
+class Lexer(object):
     def __init__(self, text):
-        # 字符串输入，比如"3+5"
+        # 输入的字符串 "3 * 5", "12 /7 * 13"
         self.text = text
-        # self.pos是self.text的下标索引
         self.pos = 0
-        # 当前的token实例
-        self.current_token = None
         self.current_char = self.text[self.pos]
 
     def error(self):
-        return Exception("Error parsing input")
+        raise Exception("Invalid character")
 
     def advance(self):
+        # 将pos前进一步
+        # 并设置current_char
         self.pos += 1
         if self.pos > len(self.text) - 1:
             self.current_char = None
@@ -50,38 +45,27 @@ class Interpreter(object):
             self.current_char = self.text[self.pos]
 
     def skip_whitespace(self):
-        # 注意None不能用!=判断
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
 
     def integer(self):
-        result = ''
+        # 将字符串解析为数字
+        # 并返回数值
+        result = ""
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
+
         return int(result)
 
     def get_next_token(self):
-        """ 语义分析器(tokenizer)
-
-        这个方法被用来将一条语句分解成tokens(一次一个token)
-        """
         while self.current_char is not None:
-
             if self.current_char.isspace():
                 self.skip_whitespace()
                 continue
 
             if self.current_char.isdigit():
                 return Token(INTEGER, self.integer())
-
-            if self.current_char == '+':
-                self.advance()
-                return Token(PLUS, '+')
-
-            if self.current_char == '-':
-                self.advance()
-                return Token(MINUS, '-')
 
             if self.current_char == '*':
                 self.advance()
@@ -91,68 +75,58 @@ class Interpreter(object):
                 self.advance()
                 return Token(DIVID, '/')
 
-            self.error()
+            if self.current_char == '+':
+                self.advance()
+                return Token(PLUS, '+')
+
+            if self.current_char == '-':
+                self.advance()
+                return Token(MINUS, '-')
 
         return Token(EOF, None)
 
+class Interpreter(object):
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.current_token = self.lexer.get_next_token()
+
+    def error(self):
+        raise Exception("Invalid syntax")
+
     def eat(self, token_type):
-        # 将当前的token和传入的token类型相比较
-        # 如果符合，则"eat"当前的token
-        # 并且将下一个token赋给self.current_token
-        # 否则引发一个错误
+        """ 验证现时的token的type是否是token_type
+        `token_type`是current_token应有的类型
+        """
         if self.current_token.type == token_type:
-            self.current_token = self.get_next_token()
+            self.current_token = self.lexer.get_next_token()
         else:
             self.error()
 
-    def expr(self):
-        """解析一条表达式
-        目前支持任意数量的加减法
+    def factor(self):
+        """返回一个INTEGER的token值
+        factor: INTEGER
         """
-
-        """expr -> INTEGER PLUS/MINUS INTEGER"""
-        # 将当前的token设置为从输入得到的第一个token
-        self.current_token = self.get_next_token()
-
-        # 期望当前的token是一个单字符的数字
-        left = self.current_token
+        token = self.current_token
         self.eat(INTEGER)
-        result = left.value
+        return token.value
 
-        # 期望当前的token是一个+ - * /
-        while self.current_char is not None:
-            op = self.current_token
-            if op.value == '+':
-                self.eat(PLUS)
-            elif op.value == '-':
-                self.eat(MINUS)
-            elif op.value == '*':
+    def expr(self):
+        """算术运算解释器
+        expr   : factor ((MUL | DIV) factor)*
+        factor : INTEGER
+        """
+        result = self.factor()
+        
+        while self.current_token.type in (MULTI, DIVID):
+            token = self.current_token
+            if token.type == MULTI:
                 self.eat(MULTI)
-            else:
+                result = result * self.factor()
+            elif token.type == DIVID:
                 self.eat(DIVID)
-
-            # 期望当前的token是一个单数字
-            right = self.current_token
-            self.eat(INTEGER)
-
-            # 此时 `INTEGER PLUS INTEGER`序列已经被成功解析
-            # 所以只需要返回加法运算的结果就OK了
-            if op.type == PLUS:
-                result = result + right.value
-            elif op.type == MINUS:
-                result = result - right.value
-            elif op.type == MULTI:
-                result = result * right.value
-            else:
-                # 是否要处理除0异常，我不确定
-                try:
-                    result = result / right.value
-                except ZeroDivisionError:
-                    print("0 cannot be divisor")
-                    result = None
+                result = result / self.factor()
 
         return result
-
 
 def main():
     while True:
@@ -162,10 +136,10 @@ def main():
             break
         if not text:
             continue
-        interpreter = Interpreter(text)
+        lexer = Lexer(text)
+        interpreter = Interpreter(lexer)
         result = interpreter.expr()
         print(result)
-
 
 if __name__ == "__main__":
     main()
