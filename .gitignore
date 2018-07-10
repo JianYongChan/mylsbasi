@@ -2,5 +2,6 @@ python/src/__pycache__/*
 python/src/.*.swp
 python/toy/__pycache__/*
 python/toy/.*.swp
+python/.vscode/*
 cpp/toy/*.swp
 cpp/toy/a.out
