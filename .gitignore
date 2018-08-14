@@ -5,3 +5,4 @@ python/toy/.*.swp
 python/.vscode/*
 cpp/toy/*.swp
 cpp/toy/a.out
+.vscode/*
