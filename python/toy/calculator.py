@@ -1,6 +1,7 @@
 INTEGER, EOF = "INTEGER", "EOF"
 PLUS, MINUS, MULTI, DIVID = "PLUS", "MINUS", "MULTI", "DIVID"
 
+
 class Token(object):
     def __init__(self, type, value):
         # token类型：INTEGER, PLUS, EOF
@@ -85,6 +86,7 @@ class Lexer(object):
 
         return Token(EOF, None)
 
+
 class Interpreter(object):
     def __init__(self, lexer):
         self.lexer = lexer
@@ -110,13 +112,11 @@ class Interpreter(object):
         self.eat(INTEGER)
         return token.value
 
-    def expr(self):
-        """算术运算解释器
-        expr   : factor ((MUL | DIV) factor)*
-        factor : INTEGER
+    def term(self):
+        """ 处理乘除运算
+        term : factor ((MUL | DIV) factor)*
         """
         result = self.factor()
-        
         while self.current_token.type in (MULTI, DIVID):
             token = self.current_token
             if token.type == MULTI:
@@ -124,9 +124,32 @@ class Interpreter(object):
                 result = result * self.factor()
             elif token.type == DIVID:
                 self.eat(DIVID)
-                result = result / self.factor()
+                try:
+                    result = result / self.factor()
+                except ZeroDivisionError:
+                    raise Exception("division cannot be zero")
 
         return result
+
+    def expr(self):
+        """算术运算解释器
+        expr   : term ((PLUS | MINUS) term)*
+        term   : factor ((MUL | DIV) factor)*
+        factor : INTEGER
+        """
+        result = self.term()
+
+        while self.current_token.type in (PLUS, MINUS):
+            token = self.current_token
+            if token.type == PLUS:
+                self.eat(PLUS)
+                result = result + self.term()
+            elif token.type == MINUS:
+                self.eat(MINUS)
+                result = result - self.term()
+
+        return result
+
 
 def main():
     while True:
@@ -140,6 +163,7 @@ def main():
         interpreter = Interpreter(lexer)
         result = interpreter.expr()
         print(result)
+
 
 if __name__ == "__main__":
     main()
