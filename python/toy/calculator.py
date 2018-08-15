@@ -1,5 +1,6 @@
 INTEGER, EOF = "INTEGER", "EOF"
 PLUS, MINUS, MULTI, DIVID = "PLUS", "MINUS", "MULTI", "DIVID"
+LPAREN, RPAREN = "LPAREN", "RPAREN"
 
 
 class Token(object):
@@ -84,6 +85,14 @@ class Lexer(object):
                 self.advance()
                 return Token(MINUS, '-')
 
+            if self.current_char == '(':
+                self.advance()
+                return Token(LPAREN, '(')
+
+            if self.current_char == ')':
+                self.advance()
+                return Token(RPAREN, ')')
+
         return Token(EOF, None)
 
 
@@ -106,11 +115,19 @@ class Interpreter(object):
 
     def factor(self):
         """返回一个INTEGER的token值
-        factor: INTEGER
+        factor: INTEGER | LPAREN expr RPAREN
         """
+        result = ""
         token = self.current_token
-        self.eat(INTEGER)
-        return token.value
+        if token.type == INTEGER:
+            self.eat(INTEGER)
+            result = token.value
+        elif token.type == LPAREN:
+            self.eat(LPAREN)
+            result = self.expr()
+            self.eat(RPAREN)
+
+        return result
 
     def term(self):
         """ 处理乘除运算
@@ -135,7 +152,7 @@ class Interpreter(object):
         """算术运算解释器
         expr   : term ((PLUS | MINUS) term)*
         term   : factor ((MUL | DIV) factor)*
-        factor : INTEGER
+        factor : INTEGER | LPAREN expr RPAREN
         """
         result = self.term()
 
