@@ -231,44 +231,6 @@ class NodeVisitor(object):
         raise Exception("No visit_{} method".format(type(node).__name__))
 
 
-class RPNNodeVisitor(object):
-    def rpn_visit_BinOp(self, node):
-        self.visit(node.left)
-        self.visit(node.right)
-        print(node.op.value, end=" ")
-
-    def rpn_visit_Num(self, node):
-        print(node.value, end=" ")
-
-    def visit(self, node):
-        method_name = "rpn_visit_" + type(node).__name__
-        visitor = getattr(self, method_name, self.generic_visit)
-        return visitor(node)
-
-    def generic_visit(self, node):
-        raise Exception("No visit_{} method".format(type(node).__name__))
-
-
-class LispNodeVisitor(object):
-    def lisp_visit_BinOp(self, node):
-        print("(", end="")
-        print(node.op.value, end=" ")
-        self.visit(node.left)
-        self.visit(node.right)
-        print("\b)", end=" ")
-
-    def lisp_visit_Num(self, node):
-        print(node.value, end=" ")
-
-    def visit(self, node):
-        method_name = "lisp_visit_" + type(node).__name__
-        visitor = getattr(self, method_name, self.generic_visit)
-        return visitor(node)
-
-    def generic_visit(self, node):
-        raise Exception("No visit_{} method".format(type(node).__name__))
-
-
 class Interpreter(NodeVisitor):
     def __init__(self, parser):
         self.parser = parser
@@ -301,18 +263,9 @@ def main():
             continue
         lexer = Lexer(text)
         parser = Parser(lexer)
-        root = parser.parse()
-        rpn_visitor = RPNNodeVisitor()
-        rpn_visitor.visit(root)
-        print()
-        lisp_visitor = LispNodeVisitor()
-        lisp_visitor.visit(root)
-        print()
-        """
         interpreter = Interpreter(parser)
         result = interpreter.interpret()
         print(result)
-        """
 
 
 if __name__ == "__main__":
