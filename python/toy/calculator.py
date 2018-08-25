@@ -184,8 +184,7 @@ class Parser(object):
             elif token.type == DIVID:
                 self.eat(DIVID)
 
-            #node = BinOp(left=node, op=token, right=self.factor())
-            node = BinOp(node, token, self.factor())
+            node = BinOp(left=node, op=token, right=self.factor())
 
         return node
 
