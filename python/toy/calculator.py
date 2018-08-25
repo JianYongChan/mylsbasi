@@ -250,8 +250,15 @@ class RPNNodeVisitor(object):
 
 
 class LispNodeVisitor(object):
-    def __init__(self, node):
-        pass
+    def lisp_visit_BinOp(self, node):
+        print("(", end="")
+        print(node.op.value, end=" ")
+        self.visit(node.left)
+        self.visit(node.right)
+        print("\b)", end=" ")
+
+    def lisp_visit_Num(self, node):
+        print(node.value, end=" ")
 
     def visit(self, node):
         method_name = "lisp_visit_" + type(node).__name__
@@ -297,6 +304,9 @@ def main():
         root = parser.parse()
         rpn_visitor = RPNNodeVisitor()
         rpn_visitor.visit(root)
+        print()
+        lisp_visitor = LispNodeVisitor()
+        lisp_visitor.visit(root)
         print()
         """
         interpreter = Interpreter(parser)
